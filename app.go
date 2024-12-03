@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"regexp"
 	"sort"
 	"strconv"
 	"strings"
@@ -17,10 +18,14 @@ func abs(x int) int {
 	return x
 }
 
+var total = 0
+
 func main() {
 	day1()
 	day2(false)
 	day2(true)
+	day3()
+	day3Part2()
 }
 
 func day1() {
@@ -107,6 +112,83 @@ func day2(part2 bool) {
 	} else {
 		fmt.Println("day2 part 2:", total)
 	}
+}
+
+func day3() {
+	// Compile the regex to match `mul(number,number)`
+	regex := regexp.MustCompile(`mul\((\d+),(\d+)\)`)
+
+	// Read the entire file into memory
+	content, err := os.ReadFile("day3.txt")
+	if err != nil {
+		fmt.Println("Error reading file:", err)
+		return
+	}
+
+	// Convert the file content to a string
+	text := string(content)
+	var total int
+
+	// Find all matches in the text
+	matches := regex.FindAllStringSubmatch(text, -1)
+	for _, match := range matches {
+		if len(match) == 3 { // Ensure we have two capture groups
+			// Parse the numbers from the match
+			num1, err1 := strconv.Atoi(match[1])
+			num2, err2 := strconv.Atoi(match[2])
+			if err1 == nil && err2 == nil {
+				total += num1 * num2
+			} else {
+				fmt.Println("Error parsing numbers:", err1, err2)
+			}
+		}
+	}
+
+	fmt.Println("day3 part1:", total)
+}
+
+func day3Part2() {
+	// Regular expressions to match `mul`, `do()`, and `don't()` instructions
+	mulRegex := regexp.MustCompile(`mul\((\d+),(\d+)\)`)
+	doRegex := regexp.MustCompile(`do\(\)`)
+	dontRegex := regexp.MustCompile(`don't\(\)`)
+
+	// Read the entire file into memory
+	content, err := os.ReadFile("day3.txt")
+	if err != nil {
+		fmt.Println("Error reading file:", err)
+		return
+	}
+
+	// Convert the file content to a string
+	text := string(content)
+	var total int
+	mulEnabled := true // mul instructions are initially enabled
+
+	// Process each character to extract meaningful instructions
+	for _, line := range regexp.MustCompile(`(mul\(\d+,\d+\)|do\(\)|don't\(\))`).FindAllString(text, -1) {
+		// Handle enabling and disabling
+		if doRegex.MatchString(line) {
+			mulEnabled = true
+		} else if dontRegex.MatchString(line) {
+			mulEnabled = false
+		} else if mulEnabled && mulRegex.MatchString(line) {
+			// Process `mul` instructions only if they are enabled
+			match := mulRegex.FindStringSubmatch(line)
+			if len(match) == 3 {
+				// Parse the numbers from the match
+				num1, err1 := strconv.Atoi(match[1])
+				num2, err2 := strconv.Atoi(match[2])
+				if err1 == nil && err2 == nil {
+					total += num1 * num2
+				} else {
+					fmt.Println("Error parsing numbers:", err1, err2)
+				}
+			}
+		}
+	}
+
+	fmt.Println("day3 part2:", total)
 }
 
 func isIncreasingOrDecreasing(nums []int) bool {
